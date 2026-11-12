@@ -1,0 +1,8 @@
+Django>=5.0.0,<6.2.0
+pandas>=2.0.0
+Pillow>=10.0.0
+asgiref>=3.7.0
+sqlparse>=0.4.4
+tzdata>=2024.1
+gunicorn>=27.0.0
+whitenoise>=6.12.0
