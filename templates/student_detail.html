@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'students_list' %}" class="btn btn-light glass-card rounded-pill px-3 py-1 small">
+        <i class="fas fa-arrow-left me-1"></i> Back to Students
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="glass-panel p-4 text-center">
+            <div class="user-avatar-circle mx-auto mb-3" style="width: 80px; height: 80px; font-size: 32px;">
+                {{ student.first_name|slice:":1" }}{{ student.last_name|slice:":1" }}
+            </div>
+            <h4 class="fw-bold mb-1">{{ student.full_name }}</h4>
+            <div class="text-primary font-monospace fw-bold mb-2">{{ student.student_id }}</div>
+            <span class="badge bg-primary-subtle text-primary rounded-pill mb-4">{{ student.department }}</span>
+
+            <ul class="list-group list-group-flush text-start small mb-4">
+                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                    <span class="text-muted">Email:</span>
+                    <span>{{ student.email }}</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                    <span class="text-muted">Phone:</span>
+                    <span>{{ student.phone }}</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                    <span class="text-muted">Enrollment Year:</span>
+                    <span>{{ student.enrollment_year }}</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                    <span class="text-muted">Status:</span>
+                    <span class="badge {% if student.status == 'active' %}bg-success{% else %}bg-danger{% endif %}">{{ student.status|upper }}</span>
+                </li>
+            </ul>
+
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'student_edit' student.id %}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="{% url 'student_delete' student.id %}" class="btn btn-outline-danger rounded-pill px-3">
+                    <i class="fas fa-trash me-1"></i> Delete
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Currently Issued Loans -->
+        <div class="glass-panel p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-book-reader me-2 text-primary"></i>Currently Issued Books ({{ active_loans|length }})</h5>
+            <div class="table-responsive">
+                <table class="table custom-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Fine Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in active_loans %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ loan.book.title }}</div>
+                                <div class="small text-muted">{{ loan.book.isbn }}</div>
+                            </td>
+                            <td>{{ loan.issue_date }}</td>
+                            <td>{{ loan.due_date }}</td>
+                            <td>
+                                {% if loan.is_overdue %}
+                                    <span class="badge bg-danger">Overdue: ${{ loan.calculate_fine }}</span>
+                                {% else %}
+                                    <span class="badge-pill-soft badge-available">Normal</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No active book loans.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Borrowing History -->
+        <div class="glass-panel p-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-history me-2 text-success"></i>Return History</h5>
+            <div class="table-responsive">
+                <table class="table custom-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Return Date</th>
+                            <th>Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ret in history_loans %}
+                        <tr>
+                            <td class="fw-semibold">{{ ret.book.title }}</td>
+                            <td>{{ ret.issue_date }}</td>
+                            <td>{{ ret.return_date }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ ret.return_detail.book_condition|default:"Good" }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No past return history records.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
