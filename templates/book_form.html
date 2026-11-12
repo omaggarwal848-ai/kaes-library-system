@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+    <div class="col-lg-9">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h3 class="fw-bold mb-0">{{ title }}</h3>
+            <a href="{% url 'books_list' %}" class="btn btn-light glass-card rounded-pill px-3 py-1 small">
+                <i class="fas fa-arrow-left me-1"></i> Back to Catalog
+            </a>
+        </div>
+
+        <div class="glass-panel p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Book Title *</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">ISBN / Accession ID *</label>
+                        {{ form.isbn }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Author(s) *</label>
+                        {{ form.author }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Category</label>
+                        {{ form.category }}
+                        <div class="mt-2">
+                            {{ form.new_category_name }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Publisher</label>
+                        {{ form.publisher }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Publication Year</label>
+                        {{ form.publication_year }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Edition</label>
+                        {{ form.edition }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Total Copies *</label>
+                        {{ form.total_copies }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Available Copies *</label>
+                        {{ form.available_copies }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Shelf / Rack Location</label>
+                        {{ form.shelf_location }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Description / Synopsis</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Book Cover Image</label>
+                    {{ form.cover_image }}
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-danger py-2 small">
+                    Please correct the errors in the form.
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'books_list' %}" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary-gradient rounded-pill px-4">
+                        <i class="fas fa-floppy-disk me-1"></i> Save Book Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
