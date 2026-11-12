@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Books Catalog - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Books Catalog</h2>
+        <p class="text-muted small mb-0">Search, filter, manage inventory, and track copy availability.</p>
+    </div>
+    {% if is_admin %}
+    <div class="d-flex gap-2">
+        <a href="{% url 'book_add' %}" class="btn btn-primary-gradient rounded-pill px-3 py-2 small">
+            <i class="fas fa-plus me-1"></i> Add New Book
+        </a>
+        <a href="{% url 'csv_manager' %}" class="btn btn-light glass-card rounded-pill px-3 py-2 small">
+            <i class="fas fa-file-csv me-1 text-success"></i> Batch CSV
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search and Filtering Filter Bar -->
+<div class="glass-panel p-3 mb-4">
+    <form method="GET" action="{% url 'books_list' %}" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by Title, Author, ISBN, Shelf...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }} ({{ cat.book_count }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="availability" class="form-select">
+                <option value="">All Stock Status</option>
+                <option value="available" {% if selected_availability == 'available' %}selected{% endif %}>Available Only</option>
+                <option value="out_of_stock" {% if selected_availability == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="sort" class="form-select">
+                <option value="title" {% if selected_sort == 'title' %}selected{% endif %}>Sort: Title A-Z</option>
+                <option value="-title" {% if selected_sort == '-title' %}selected{% endif %}>Sort: Title Z-A</option>
+                <option value="author" {% if selected_sort == 'author' %}selected{% endif %}>Sort: Author</option>
+                <option value="available" {% if selected_sort == 'available' %}selected{% endif %}>Sort: Most Available</option>
+                <option value="year" {% if selected_sort == 'year' %}selected{% endif %}>Sort: Year (Newest)</option>
+            </select>
+        </div>
+        <div class="col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-primary rounded-pill w-100"><i class="fas fa-filter"></i></button>
+            <a href="{% url 'books_list' %}" class="btn btn-light rounded-pill" title="Reset Filters"><i class="fas fa-rotate"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3 text-muted small">
+    <div>Found <strong>{{ total_results }}</strong> book record(s)</div>
+</div>
+
+<!-- Books Table Card -->
+<div class="glass-panel overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table custom-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Cover</th>
+                    <th>Book Details</th>
+                    <th>Category</th>
+                    <th>Shelf / Location</th>
+                    <th>Copies Available</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in books %}
+                <tr>
+                    <td>
+                        {% if b.cover_image %}
+                            <img src="{{ b.cover_image.url }}" alt="{{ b.title }}" style="width: 44px; height: 58px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                        {% else %}
+                            <div style="width: 44px; height: 58px; background: rgba(99, 102, 241, 0.12); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #6366f1;">
+                                <i class="fas fa-book"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ b.title }}</div>
+                        <div class="small text-muted">By {{ b.author }} &bull; ISBN: <span class="badge bg-light text-dark border">{{ b.isbn }}</span> &bull; {{ b.edition }} ({{ b.publication_year }})</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ b.category.name|default:"General" }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary"><i class="fas fa-map-pin me-1"></i>{{ b.shelf_location|default:"General Section" }}</span>
+                    </td>
+                    <td>
+                        {% if b.available_copies > 0 %}
+                            <span class="badge-pill-soft badge-available">{{ b.available_copies }} / {{ b.total_copies }} Available</span>
+                        {% else %}
+                            <span class="badge-pill-soft badge-out">0 / {{ b.total_copies }} (Out of Stock)</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1">
+                            <a href="{% url 'book_detail' b.id %}" class="btn btn-sm btn-light rounded-pill" title="View Details">
+                                <i class="fas fa-eye text-info"></i>
+                            </a>
+                            {% if is_admin %}
+                            <a href="{% url 'book_edit' b.id %}" class="btn btn-sm btn-light rounded-pill" title="Edit">
+                                <i class="fas fa-edit text-primary"></i>
+                            </a>
+                            <a href="{% url 'book_delete' b.id %}" class="btn btn-sm btn-light rounded-pill" title="Delete">
+                                <i class="fas fa-trash text-danger"></i>
+                            </a>
+                            {% else %}
+                                <!-- Student Queue Hold Request -->
+                                <form method="POST" action="{% url 'queue_enqueue_action' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="book_id" value="{{ b.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill" title="Queue Hold Request">
+                                        <i class="fas fa-clock"></i> Hold
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fas fa-book-open fa-3x mb-3 text-secondary opacity-50"></i>
+                        <div>No books found matching your search query.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if books.has_other_pages %}
+<nav class="d-flex justify-content-center">
+    <ul class="pagination">
+        {% if books.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ books.previous_page_number }}&q={{ query }}&category={{ selected_category }}&availability={{ selected_availability }}&sort={{ selected_sort }}">&laquo; Previous</a>
+        </li>
+        {% endif %}
+
+        {% for num in books.paginator.page_range %}
+            {% if books.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > books.number|add:'-3' and num < books.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&category={{ selected_category }}&availability={{ selected_availability }}&sort={{ selected_sort }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if books.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ books.next_page_number }}&q={{ query }}&category={{ selected_category }}&availability={{ selected_availability }}&sort={{ selected_sort }}">Next &raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
