@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Student Management - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Student Management</h2>
+        <p class="text-muted small mb-0">Manage registered students, track borrowing limits, overdue books, and fine totals.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'student_add' %}" class="btn btn-primary-gradient rounded-pill px-3 py-2 small">
+            <i class="fas fa-user-plus me-1"></i> Register Student
+        </a>
+        <a href="{% url 'csv_manager' %}" class="btn btn-light glass-card rounded-pill px-3 py-2 small">
+            <i class="fas fa-file-csv me-1 text-success"></i> Batch CSV
+        </a>
+    </div>
+</div>
+
+<!-- Search & Department Filters -->
+<div class="glass-panel p-3 mb-4">
+    <form method="GET" action="{% url 'students_list' %}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by Name, Student ID, Email, Phone...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="department" class="form-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="suspended" {% if selected_status == 'suspended' %}selected{% endif %}>Suspended</option>
+                <option value="graduated" {% if selected_status == 'graduated' %}selected{% endif %}>Graduated</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-primary rounded-pill w-100"><i class="fas fa-filter me-1"></i> Filter</button>
+            <a href="{% url 'students_list' %}" class="btn btn-light rounded-pill" title="Reset"><i class="fas fa-rotate"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Students Table -->
+<div class="glass-panel overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table custom-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Department</th>
+                    <th>Contact Info</th>
+                    <th>Currently Issued</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>
+                        <span class="fw-bold text-primary font-monospace">{{ s.student_id }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ s.full_name }}</div>
+                        <div class="small text-muted">Enrolled: {{ s.enrollment_year }}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary">{{ s.department }}</span>
+                    </td>
+                    <td>
+                        <div class="small"><i class="fas fa-envelope me-1 text-muted"></i>{{ s.email }}</div>
+                        <div class="small text-muted"><i class="fas fa-phone me-1"></i>{{ s.phone }}</div>
+                    </td>
+                    <td>
+                        {% if s.currently_issued_count > 0 %}
+                            <span class="badge bg-primary rounded-pill px-3 py-1">{{ s.currently_issued_count }} Book(s)</span>
+                            {% if s.overdue_count > 0 %}
+                                <span class="badge bg-danger rounded-pill px-2 py-1 ms-1" title="Overdue books!"><i class="fas fa-triangle-exclamation"></i> {{ s.overdue_count }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">0 Issued</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.status == 'active' %}
+                            <span class="badge-pill-soft badge-available">Active</span>
+                        {% elif s.status == 'suspended' %}
+                            <span class="badge-pill-soft badge-out">Suspended</span>
+                        {% else %}
+                            <span class="badge-pill-soft bg-secondary-subtle text-secondary">Graduated</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1">
+                            <a href="{% url 'student_detail' s.id %}" class="btn btn-sm btn-light rounded-pill" title="View Profile & Borrow History">
+                                <i class="fas fa-eye text-info"></i>
+                            </a>
+                            <a href="{% url 'student_edit' s.id %}" class="btn btn-sm btn-light rounded-pill" title="Edit">
+                                <i class="fas fa-edit text-primary"></i>
+                            </a>
+                            <a href="{% url 'student_delete' s.id %}" class="btn btn-sm btn-light rounded-pill" title="Delete">
+                                <i class="fas fa-trash text-danger"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="fas fa-user-slash fa-3x mb-3 text-secondary opacity-50"></i>
+                        <div>No student records found matching the criteria.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if students.has_other_pages %}
+<nav class="d-flex justify-content-center">
+    <ul class="pagination">
+        {% if students.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ students.previous_page_number }}&q={{ query }}&department={{ selected_department }}&status={{ selected_status }}">&laquo; Previous</a></li>
+        {% endif %}
+        {% for num in students.paginator.page_range %}
+            {% if students.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&department={{ selected_department }}&status={{ selected_status }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if students.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ students.next_page_number }}&q={{ query }}&department={{ selected_department }}&status={{ selected_status }}">Next &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
