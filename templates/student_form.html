@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h3 class="fw-bold mb-0">{{ title }}</h3>
+            <a href="{% url 'students_list' %}" class="btn btn-light glass-card rounded-pill px-3 py-1 small">
+                <i class="fas fa-arrow-left me-1"></i> Back to Students
+            </a>
+        </div>
+
+        <div class="glass-panel p-4 p-md-5">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Student ID / Roll No *</label>
+                        {{ form.student_id }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Academic Department *</label>
+                        {{ form.department }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">First Name *</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Last Name *</label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Email Address *</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Phone Number *</label>
+                        {{ form.phone }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Enrollment Year</label>
+                        {{ form.enrollment_year }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Account Status</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Hostel / Campus Residence Address</label>
+                    {{ form.address }}
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-danger py-2 small">
+                    Please correct the highlighted form errors.
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'students_list' %}" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary-gradient rounded-pill px-4">
+                        <i class="fas fa-floppy-disk me-1"></i> Save Student Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
