@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}CSV Manager - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">CSV Import & Export Center</h2>
+        <p class="text-muted small mb-0">High-performance bulk data processing powered by Pandas. Validate, import, and export catalog and circulation records.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'download_sample_books' %}" class="btn btn-outline-primary glass-card rounded-pill px-3 py-2 small">
+            <i class="fas fa-file-arrow-down me-1"></i> Sample Books CSV
+        </a>
+        <a href="{% url 'download_sample_students' %}" class="btn btn-outline-secondary glass-card rounded-pill px-3 py-2 small">
+            <i class="fas fa-file-arrow-down me-1"></i> Sample Students CSV
+        </a>
+    </div>
+</div>
+
+<!-- Import Summary Reports if available in session -->
+{% if request.session.books_import_report %}
+<div class="alert alert-info border-0 shadow-sm glass-panel p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-file-circle-check me-2"></i>Books CSV Import Processing Report</h5>
+        <span class="badge bg-primary text-white">Pandas Validation Complete</span>
+    </div>
+    <div class="row g-2 mb-2 text-center">
+        <div class="col-3"><div class="p-2 bg-light-subtle rounded"><div class="fw-bold fs-5">{{ request.session.books_import_report.total_rows }}</div><small class="text-muted">Total Rows</small></div></div>
+        <div class="col-3"><div class="p-2 bg-success-subtle rounded"><div class="fw-bold fs-5 text-success">{{ request.session.books_import_report.added }}</div><small class="text-success">Records Added</small></div></div>
+        <div class="col-3"><div class="p-2 bg-warning-subtle rounded"><div class="fw-bold fs-5 text-warning">{{ request.session.books_import_report.updated }}</div><small class="text-warning">Records Updated</small></div></div>
+        <div class="col-3"><div class="p-2 bg-danger-subtle rounded"><div class="fw-bold fs-5 text-danger">{{ request.session.books_import_report.skipped }}</div><small class="text-danger">Skipped / Errors</small></div></div>
+    </div>
+    {% if request.session.books_import_report.errors %}
+    <div class="mt-2 small text-danger">
+        <strong>Validation Warnings:</strong>
+        <ul class="mb-0 ps-3">
+            {% for err in request.session.books_import_report.errors %}
+                <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if request.session.students_import_report %}
+<div class="alert alert-info border-0 shadow-sm glass-panel p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-file-circle-check me-2"></i>Students CSV Import Processing Report</h5>
+        <span class="badge bg-primary text-white">Pandas Validation Complete</span>
+    </div>
+    <div class="row g-2 mb-2 text-center">
+        <div class="col-3"><div class="p-2 bg-light-subtle rounded"><div class="fw-bold fs-5">{{ request.session.students_import_report.total_rows }}</div><small class="text-muted">Total Rows</small></div></div>
+        <div class="col-3"><div class="p-2 bg-success-subtle rounded"><div class="fw-bold fs-5 text-success">{{ request.session.students_import_report.added }}</div><small class="text-success">Records Added</small></div></div>
+        <div class="col-3"><div class="p-2 bg-warning-subtle rounded"><div class="fw-bold fs-5 text-warning">{{ request.session.students_import_report.updated }}</div><small class="text-warning">Records Updated</small></div></div>
+        <div class="col-3"><div class="p-2 bg-danger-subtle rounded"><div class="fw-bold fs-5 text-danger">{{ request.session.students_import_report.skipped }}</div><small class="text-danger">Skipped / Errors</small></div></div>
+    </div>
+    {% if request.session.students_import_report.errors %}
+    <div class="mt-2 small text-danger">
+        <strong>Validation Warnings:</strong>
+        <ul class="mb-0 ps-3">
+            {% for err in request.session.students_import_report.errors %}
+                <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- CSV Import Card -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 p-md-5 h-100">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="stat-icon primary"><i class="fas fa-file-import"></i></div>
+                <div>
+                    <h4 class="fw-bold mb-0">Import CSV Records</h4>
+                    <p class="text-muted small mb-0">Upload structured CSV files with automated Pandas schema validation.</p>
+                </div>
+            </div>
+
+            <!-- Import Books Form -->
+            <div class="glass-card p-3 mb-4">
+                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-book me-2"></i>Import Books Catalog</h6>
+                <p class="small text-muted mb-3">Expected columns: <code>title</code>, <code>author</code>, <code>isbn</code>, <code>category</code>, <code>total_copies</code>, <code>shelf_location</code>, etc.</p>
+                
+                <form method="POST" action="{% url 'import_books_action' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group mb-2">
+                        <input type="file" name="books_csv" class="form-control" accept=".csv" required>
+                        <button type="submit" class="btn btn-primary-gradient px-4">
+                            <i class="fas fa-upload me-1"></i> Import Books
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Import Students Form -->
+            <div class="glass-card p-3">
+                <h6 class="fw-bold text-purple mb-2" style="color: #8b5cf6;"><i class="fas fa-user-graduate me-2"></i>Import Student Records</h6>
+                <p class="small text-muted mb-3">Expected columns: <code>student_id</code>, <code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>phone</code>, <code>department</code>, etc.</p>
+                
+                <form method="POST" action="{% url 'import_students_action' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group mb-2">
+                        <input type="file" name="students_csv" class="form-control" accept=".csv" required>
+                        <button type="submit" class="btn btn-primary px-4" style="background: #8b5cf6; border-color: #8b5cf6;">
+                            <i class="fas fa-upload me-1"></i> Import Students
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Export / Share Card -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 p-md-5 h-100">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="stat-icon success"><i class="fas fa-file-export"></i></div>
+                <div>
+                    <h4 class="fw-bold mb-0">Export & Share Reports</h4>
+                    <p class="text-muted small mb-0">Instant download and shareable CSV audit exports for external analysis.</p>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="glass-card p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold"><i class="fas fa-book text-primary me-2"></i>All Books Catalog</div>
+                        <small class="text-muted">Includes ISBN, title, author, category, copies, shelf location</small>
+                    </div>
+                    <a href="{% url 'export_books_action' %}" class="btn btn-sm btn-outline-primary rounded-pill px-4">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </a>
+                </div>
+
+                <div class="glass-card p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold"><i class="fas fa-user-graduate text-purple me-2"></i>Student Records Directory</div>
+                        <small class="text-muted">Includes student IDs, emails, departments, borrowing tallies</small>
+                    </div>
+                    <a href="{% url 'export_students_action' %}" class="btn btn-sm btn-outline-purple rounded-pill px-4" style="border-color: #8b5cf6; color: #8b5cf6;">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </a>
+                </div>
+
+                <div class="glass-card p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold"><i class="fas fa-hand-holding text-warning me-2"></i>Issued Books Records</div>
+                        <small class="text-muted">Active loans, due dates, calculated fines, borrower IDs</small>
+                    </div>
+                    <a href="{% url 'export_issued_action' %}" class="btn btn-sm btn-outline-warning rounded-pill px-4">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </a>
+                </div>
+
+                <div class="glass-card p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold"><i class="fas fa-arrow-turn-down text-info me-2"></i>Returned Books History</div>
+                        <small class="text-muted">Return timestamps, condition ratings, fines collected</small>
+                    </div>
+                    <a href="{% url 'export_returned_action' %}" class="btn btn-sm btn-outline-info rounded-pill px-4">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </a>
+                </div>
+
+                <div class="glass-card p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold"><i class="fas fa-users-line text-danger me-2"></i>Pending Hold Requests</div>
+                        <small class="text-muted">FIFO Queue requests, request timestamps, student IDs</small>
+                    </div>
+                    <a href="{% url 'export_requests_action' %}" class="btn btn-sm btn-outline-danger rounded-pill px-4">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
