@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Student Portal - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-4 mb-4 border-start border-4 border-primary">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h3 class="fw-bold mb-1">Welcome, {{ student.full_name|default:user.username }}!</h3>
+            <p class="text-muted small mb-0">
+                <i class="fas fa-id-badge me-1 text-primary"></i> ID: <strong>{{ student.student_id }}</strong> &bull;
+                <i class="fas fa-graduation-cap me-1 text-purple"></i> Department: {{ student.department }} &bull;
+                <i class="fas fa-circle-check me-1 text-success"></i> Status: <span class="badge bg-success-subtle text-success">{{ student.status|upper }}</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'books_list' %}" class="btn btn-primary-gradient rounded-pill px-3 py-2 small">
+                <i class="fas fa-search me-1"></i> Browse Catalog
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Active Notifications Banner if any book in queue is approved -->
+{% for req in my_requests %}
+    {% if req.notification_sent and req.status == 'approved' %}
+    <div class="alert alert-success d-flex align-items-center gap-3 shadow-sm rounded-4 mb-4" role="alert">
+        <i class="fas fa-bell fs-3"></i>
+        <div>
+            <strong>Book Hold Ready for Pickup!</strong> {{ req.notification_message }}
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+<div class="row g-4 mb-4">
+    <!-- Currently Issued Books -->
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-book-reader me-2 text-primary"></i>My Currently Issued Books</h5>
+                <span class="badge bg-primary-subtle text-primary">{{ my_issues|length }} Active Loan(s)</span>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table custom-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Book Details</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status / Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in my_issues %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ issue.book.title }}</div>
+                                <div class="small text-muted">Author: {{ issue.book.author }} &bull; Shelf: {{ issue.book.shelf_location }}</div>
+                            </td>
+                            <td>{{ issue.issue_date }}</td>
+                            <td>
+                                <div>{{ issue.due_date }}</div>
+                                {% if issue.is_overdue %}
+                                    <span class="badge bg-danger-subtle text-danger small">Overdue</span>
+                                {% else %}
+                                    <span class="small text-success">{{ issue.days_remaining_or_overdue }} days left</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if issue.is_overdue %}
+                                    <span class="badge bg-danger text-white">Fine: ${{ issue.calculate_fine }}</span>
+                                {% else %}
+                                    <span class="badge-pill-soft badge-available">On Schedule</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">You have no active issued books.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Hold Requests in FIFO Queue -->
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-users-line me-2 text-purple"></i>My Hold Requests in Queue</h5>
+                <span class="badge bg-purple-subtle text-purple">{{ my_requests|length }} Request(s)</span>
+            </div>
+
+            <div class="list-group list-group-flush">
+                {% for req in my_requests %}
+                <div class="list-group-item bg-transparent px-0 py-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div class="fw-semibold">{{ req.book.title }}</div>
+                        <span class="badge {% if req.status == 'approved' %}bg-success{% elif req.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="small text-muted mb-2">Request ID: {{ req.request_id }} &bull; Date: {{ req.request_date|date:"M d, Y" }}</div>
+                    {% if req.status == 'pending' %}
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" style="width: 60%"></div>
+                        </div>
+                        <div class="small text-muted mt-1">Waiting in FIFO Queue for next return</div>
+                    {% elif req.status == 'approved' %}
+                        <div class="small text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Reserved for you at library desk</div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">No hold requests placed.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommended Available Books Section -->
+<div class="glass-panel p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="fw-bold mb-0"><i class="fas fa-sparkles me-2 text-warning"></i>Available in Library Catalog</h5>
+            <small class="text-muted">Books ready for borrowing or queuing</small>
+        </div>
+        <a href="{% url 'books_list' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View Full Catalog</a>
+    </div>
+
+    <div class="row g-3">
+        {% for b in recommended_books %}
+        <div class="col-md-4 col-xl-2">
+            <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between text-center">
+                <div>
+                    <div class="mb-2" style="height: 110px; background: rgba(99, 102, 241, 0.08); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-book fa-3x text-primary opacity-75"></i>
+                    </div>
+                    <h6 class="fw-bold mb-1 text-truncate" title="{{ b.title }}">{{ b.title }}</h6>
+                    <div class="small text-muted mb-2 text-truncate">{{ b.author }}</div>
+                </div>
+                <div>
+                    <span class="badge-pill-soft badge-available d-inline-block mb-2">{{ b.available_copies }} Available</span>
+                    <form method="POST" action="{% url 'queue_enqueue_action' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="book_id" value="{{ b.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill w-100">
+                            Hold Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
