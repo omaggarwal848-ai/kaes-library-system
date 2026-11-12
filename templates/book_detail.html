@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }} - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'books_list' %}" class="btn btn-light glass-card rounded-pill px-3 py-1 small">
+        <i class="fas fa-arrow-left me-1"></i> Back to Catalog
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Book Overview Card -->
+    <div class="col-lg-4">
+        <div class="glass-panel p-4 text-center">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="img-fluid rounded-3 shadow mb-3" style="max-height: 280px; object-fit: cover;">
+            {% else %}
+                <div class="py-5 mb-3 rounded-3" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                    <i class="fas fa-book fa-5x"></i>
+                </div>
+            {% endif %}
+
+            <h4 class="fw-bold mb-1">{{ book.title }}</h4>
+            <div class="text-muted mb-3">By {{ book.author }}</div>
+
+            <div class="mb-4">
+                {% if book.available_copies > 0 %}
+                    <span class="badge-pill-soft badge-available fs-6">{{ book.available_copies }} / {{ book.total_copies }} Available</span>
+                {% else %}
+                    <span class="badge-pill-soft badge-out fs-6">Out of Stock</span>
+                {% endif %}
+            </div>
+
+            {% if is_admin %}
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'book_edit' book.id %}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="{% url 'book_delete' book.id %}" class="btn btn-outline-danger rounded-pill px-3">
+                    <i class="fas fa-trash me-1"></i> Delete
+                </a>
+            </div>
+            {% else %}
+            <form method="POST" action="{% url 'queue_enqueue_action' %}">
+                {% csrf_token %}
+                <input type="hidden" name="book_id" value="{{ book.id }}">
+                <button type="submit" class="btn btn-primary-gradient rounded-pill px-4 w-100">
+                    <i class="fas fa-users-line me-1"></i> Enqueue Hold Request
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Metadata & Associated Transactions -->
+    <div class="col-lg-8">
+        <div class="glass-panel p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-circle-info me-2 text-primary"></i>Bibliographic Details</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="text-muted small">ISBN / Accession Number</div>
+                    <div class="fw-semibold">{{ book.isbn }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Category</div>
+                    <div class="fw-semibold">{{ book.category.name|default:"General" }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Publisher & Edition</div>
+                    <div class="fw-semibold">{{ book.publisher|default:"N/A" }} &bull; {{ book.edition }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Publication Year</div>
+                    <div class="fw-semibold">{{ book.publication_year }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Physical Shelf Location</div>
+                    <div class="fw-semibold text-primary"><i class="fas fa-location-dot me-1"></i>{{ book.shelf_location|default:"General Racks" }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Added to Library On</div>
+                    <div class="fw-semibold">{{ book.created_at|date:"F d, Y" }}</div>
+                </div>
+            </div>
+
+            {% if book.description %}
+            <div class="mt-4 pt-3 border-top border-light-subtle">
+                <div class="text-muted small mb-1">Synopsis / Summary</div>
+                <p class="mb-0" style="line-height: 1.6;">{{ book.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Current Active Loans for this Book -->
+        <div class="glass-panel p-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-hand-holding me-2 text-warning"></i>Current Active Borrowers</h5>
+            <div class="table-responsive">
+                <table class="table custom-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for iss in active_issues %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ iss.student.full_name }}</div>
+                                <div class="small text-muted">{{ iss.student.student_id }}</div>
+                            </td>
+                            <td>{{ iss.issue_date }}</td>
+                            <td>{{ iss.due_date }}</td>
+                            <td>
+                                {% if iss.is_overdue %}
+                                    <span class="badge bg-danger text-white">Overdue</span>
+                                {% else %}
+                                    <span class="badge-pill-soft badge-available">Issued</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No active loans for this title currently.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
