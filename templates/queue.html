@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}Request Queue Management (FIFO) - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="fw-bold mb-0">Book Request Queue Management</h2>
+            <span class="badge bg-purple-subtle text-purple border border-purple-subtle px-3 py-1 rounded-pill" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1);">FIFO: First In, First Out</span>
+        </div>
+        <p class="text-muted small mb-0">Pure Python collections.deque manual Queue implementation. Manages student hold requests in strict FIFO order.</p>
+    </div>
+
+    <!-- Queue Operations Controls -->
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-purple glass-card rounded-pill px-3 py-2 small" style="border-color: #8b5cf6; color: #8b5cf6;" id="ajaxQueuePeekBtn">
+            <i class="fas fa-eye me-1"></i> PEEK (Front Request)
+        </button>
+
+        <form method="POST" action="{% url 'queue_dequeue_action' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary-gradient rounded-pill px-4 py-2 small fw-semibold shadow-sm" {% if queue_size == 0 %}disabled{% endif %}>
+                <i class="fas fa-check-double me-1"></i> DEQUEUE (Process Oldest)
+            </button>
+        </form>
+
+        <button type="button" class="btn btn-light glass-card rounded-pill px-3 py-2 small" data-bs-toggle="modal" data-bs-target="#enqueueModal">
+            <i class="fas fa-plus me-1 text-primary"></i> ENQUEUE Request
+        </button>
+    </div>
+</div>
+
+<!-- Theory & Principle Banner -->
+<div class="glass-panel p-3 mb-4" style="background: rgba(139, 92, 246, 0.05); border-left: 5px solid #8b5cf6;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fas fa-users-line fa-2x" style="color: #8b5cf6;"></i>
+            <div>
+                <div class="fw-bold" style="color: #8b5cf6;">Queue Data Structure Mechanics:</div>
+                <div class="small text-muted">
+                    Implemented using pure Python <code>class BookRequestQueue</code> and <code>collections.deque</code>.
+                    <strong>ENQUEUE</strong> appends to rear (tail).
+                    <strong>DEQUEUE</strong> pops from front (head, <code>popleft()</code>).
+                    Current Queue Size: <strong>{{ queue_size }}</strong> pending request(s).
+                </div>
+            </div>
+        </div>
+        <div>
+            <span class="badge text-white rounded-pill px-3 py-2" style="background: #8b5cf6;">Queue Capacity: Dynamic &bull; FIFO Policy</span>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Pipeline Representation of Queue -->
+<div class="glass-panel p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fas fa-network-wired me-2 text-primary"></i>Visual FIFO Pipeline</h5>
+        <div class="d-flex align-items-center gap-3 small">
+            <span><i class="fas fa-circle text-success me-1"></i> Front / Head (Next to serve)</span>
+            <span><i class="fas fa-circle text-warning me-1"></i> Rear / Tail (Newest)</span>
+        </div>
+    </div>
+
+    <div class="queue-pipeline-container">
+        {% if queue_items %}
+        <div class="d-flex justify-content-between align-items-center px-3 mb-2 small text-muted fw-bold">
+            <div><i class="fas fa-arrow-left text-success me-1"></i> FRONT / HEAD OF QUEUE (DEQUEUE EXIT)</div>
+            <div>REAR / TAIL OF QUEUE (ENQUEUE ENTRANCE) <i class="fas fa-arrow-right text-warning ms-1"></i></div>
+        </div>
+
+        <div class="queue-track">
+            {% for item in queue_items %}
+            <div class="queue-item-node {% if forloop.first %}is-front{% elif forloop.last %}is-rear{% endif %}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    {% if forloop.first %}
+                        <span class="queue-pointer-badge bg-success text-white">FRONT (Next #1)</span>
+                    {% elif forloop.last %}
+                        <span class="queue-pointer-badge bg-warning text-dark">REAR (Tail)</span>
+                    {% else %}
+                        <span class="queue-pointer-badge bg-secondary-subtle text-secondary">Pos #{{ forloop.counter }}</span>
+                    {% endif %}
+                    <span class="small text-muted font-monospace">{{ item.request_id|slice:"-6:" }}</span>
+                </div>
+
+                <div class="fw-bold text-truncate mb-1" title="{{ item.book_title }}">{{ item.book_title }}</div>
+                <div class="small text-muted mb-2"><i class="fas fa-user-graduate me-1"></i>{{ item.student_name }}</div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle small">
+                    <span class="text-muted">Wait Order:</span>
+                    <span class="fw-bold text-primary">Ticket #{{ forloop.counter }}</span>
+                </div>
+            </div>
+            {% if not forloop.last %}
+            <div class="text-muted px-1"><i class="fas fa-chevron-left text-purple opacity-50 fs-5"></i></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-users-slash fa-3x mb-3 text-secondary opacity-50"></i>
+            <h6>The Request Queue is Empty</h6>
+            <p class="small mb-0">Students requesting books that are out of stock will be automatically enqueued here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Queue Items Table -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-list-ol me-2 text-primary"></i>Pending Queue Items (Front to Rear)</h5>
+                <span class="badge bg-purple text-white">{{ queue_size }} Waiting</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table custom-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Student</th>
+                            <th>Requested Book</th>
+                            <th>Copies Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in queue_items %}
+                        <tr {% if forloop.first %}class="table-success-subtle"{% endif %}>
+                            <td>
+                                {% if forloop.first %}
+                                    <span class="badge bg-success text-white">HEAD #1</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">#{{ forloop.counter }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ item.student_name }}</div>
+                                <div class="small text-muted">{{ item.student_id }} &bull; {{ item.request_date|slice:"5:16" }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ item.book_title }}</div>
+                                <div class="small text-muted">ISBN: {{ item.book_isbn }}</div>
+                            </td>
+                            <td>
+                                {% if item.book_available > 0 %}
+                                    <span class="badge bg-success text-white">{{ item.book_available }} Copy Available!</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">0 Available</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No pending requests in queue.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processed & Recent Queue Activity Log -->
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fas fa-history me-2 text-info"></i>All Queue Requests Log</h5>
+            
+            <div class="list-group list-group-flush">
+                {% for req in all_requests|slice:":6" %}
+                <div class="list-group-item bg-transparent px-0 py-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div class="fw-bold small">{{ req.student.full_name }}</div>
+                        <span class="badge {% if req.status == 'approved' %}bg-success{% elif req.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="small text-truncate text-muted">{{ req.book.title }}</div>
+                    <div class="small text-muted d-flex justify-content-between mt-1">
+                        <span>{{ req.request_id }}</span>
+                        <span>{{ req.request_date|date:"M d, H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">No request records.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enqueue Modal -->
+<div class="modal fade" id="enqueueModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-panel border-0">
+            <div class="modal-header border-bottom border-light-subtle">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2 text-purple"></i>Enqueue Book Hold Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'queue_enqueue_action' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select Student *</label>
+                        <select name="student_id" class="form-select" required>
+                            <option value="">-- Choose Student --</option>
+                            {% for stu in students %}
+                            <option value="{{ stu.id }}">{{ stu.student_id }} - {{ stu.full_name }} ({{ stu.department }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select Book Title *</label>
+                        <select name="book_id" class="form-select" required>
+                            <option value="">-- Choose Book --</option>
+                            {% for b in books %}
+                            <option value="{{ b.id }}">{{ b.title }} (Available: {{ b.available_copies }}/{{ b.total_copies }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Hold Request Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Needed for semester research project"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-gradient rounded-pill px-4">
+                        <i class="fas fa-users-line me-1"></i> Enqueue to Rear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
