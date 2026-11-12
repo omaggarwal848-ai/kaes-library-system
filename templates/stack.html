@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}Return Stack Management (LIFO) - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="fw-bold mb-0">Book Return Stack Management</h2>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">LIFO: Last In, First Out</span>
+        </div>
+        <p class="text-muted small mb-0">Pure Python list-based manual Stack implementation. Returned books rest on this inspection stack prior to shelving.</p>
+    </div>
+    
+    <!-- Stack Operations Controls -->
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-primary glass-card rounded-pill px-3 py-2 small" id="ajaxStackPeekBtn">
+            <i class="fas fa-eye me-1"></i> PEEK (Top Item)
+        </button>
+
+        <form method="POST" action="{% url 'stack_pop_action' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 small fw-semibold shadow-sm" {% if stack_size == 0 %}disabled{% endif %}>
+                <i class="fas fa-arrow-up-from-bracket me-1"></i> POP (LIFO Reshelve)
+            </button>
+        </form>
+
+        <a href="{% url 'stack_view' %}" class="btn btn-light glass-card rounded-pill px-3 py-2 small">
+            <i class="fas fa-rotate me-1"></i> DISPLAY (Refresh)
+        </a>
+    </div>
+</div>
+
+<!-- Theory & Principle Banner -->
+<div class="glass-panel p-3 mb-4" style="background: rgba(239, 68, 68, 0.05); border-left: 5px solid #ef4444;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fas fa-layer-group fa-2x text-danger"></i>
+            <div>
+                <div class="fw-bold text-danger">Stack Data Structure Mechanics:</div>
+                <div class="small text-muted">
+                    Implemented using pure Python <code>class BookReturnStack</code> and internal <code>list</code>.
+                    <strong>PUSH</strong> appends the newest return to index <code>[-1]</code>.
+                    <strong>POP</strong> removes from index <code>[-1]</code>.
+                    Current Stack Size: <strong>{{ stack_size }}</strong> item(s).
+                </div>
+            </div>
+        </div>
+        <div>
+            <span class="badge bg-danger text-white rounded-pill px-3 py-2">Stack Capacity: Dynamic &bull; LIFO Policy</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Visual Representation of the Stack -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-cube me-2 text-danger"></i>Visual Stack Cylinder</h5>
+                <span class="badge bg-secondary-subtle text-secondary">{{ stack_size }} Items in Stack</span>
+            </div>
+
+            <!-- 3D-styled Stack Cylinder -->
+            <div class="stack-visual-container">
+                {% if stack_items %}
+                <div class="text-center mb-2">
+                    <span class="badge bg-danger text-white px-3 py-1 shadow-sm" style="animation: pulse 2s infinite;">
+                        <i class="fas fa-arrow-down me-1"></i> TOP OF STACK (LIFO Access Point)
+                    </span>
+                </div>
+                <div class="stack-cylinder">
+                    {% for item in stack_items %}
+                    <div class="stack-item-node {% if forloop.first %}is-top{% endif %}">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="badge {% if forloop.first %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
+                                {% if forloop.first %}TOP{% else %}#{{ forloop.revcounter }}{% endif %}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-truncate" style="max-width: 250px;">{{ item.book_title }}</div>
+                                <div class="small text-muted">Student: {{ item.student_name }} &bull; Condition: {{ item.condition }}</div>
+                            </div>
+                        </div>
+                        <div class="text-end small text-muted font-monospace">
+                            {{ item.pushed_at|slice:"11:19" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-2 text-muted small fw-semibold">
+                    <i class="fas fa-bars"></i> BASE OF STACK (First Returned)
+                </div>
+                {% else %}
+                <div class="stack-empty-state">
+                    <i class="fas fa-box-open fa-3x mb-3 text-secondary opacity-50"></i>
+                    <h6>The Return Stack is Empty</h6>
+                    <p class="small mb-0">When books are returned in the Issue & Return module, they are automatically pushed onto this stack.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-3 text-center small text-muted">
+                Last In, First Out: The book on the TOP is always the next item to be inspected and cleared.
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Stack Item List & Operations -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i>LIFO Stack Order (Top to Bottom)</h5>
+            
+            <div class="table-responsive">
+                <table class="table custom-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Book Title</th>
+                            <th>Borrower</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in stack_items %}
+                        <tr {% if forloop.first %}class="table-danger-subtle"{% endif %}>
+                            <td>
+                                {% if forloop.first %}
+                                    <span class="badge bg-danger text-white">TOP (Next)</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">#{{ forloop.counter }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ item.book_title }}</div>
+                                <div class="small text-muted">ISBN: {{ item.book_isbn }}</div>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold">{{ item.student_name }}</div>
+                                <div class="small text-muted">{{ item.student_id }}</div>
+                            </td>
+                            <td>
+                                <span class="badge-pill-soft badge-pending">In Stack</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No books currently waiting on Return Stack.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Return Audit & Shelving History -->
+<div class="glass-panel p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fas fa-clock-rotate-left me-2 text-success"></i>Return Stack History & Shelving Audit</h5>
+        <span class="small text-muted">Showing recent 50 stack events</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table custom-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Item ID</th>
+                    <th>Book Title</th>
+                    <th>Student Name</th>
+                    <th>Pushed Timestamp</th>
+                    <th>Popped / Shelved Timestamp</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hist in history %}
+                <tr>
+                    <td><span class="font-monospace text-muted">#{{ hist.id }}</span></td>
+                    <td class="fw-bold">{{ hist.book_title }}</td>
+                    <td>{{ hist.student_name }} ({{ hist.student_id }})</td>
+                    <td>{{ hist.pushed_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        {% if hist.popped_at %}
+                            {{ hist.popped_at|date:"Y-m-d H:i" }} by {{ hist.popped_by.username|default:"Admin" }}
+                        {% else %}
+                            <span class="text-muted italic">Awaiting POP</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if hist.status == 'shelved' %}
+                            <span class="badge-pill-soft badge-available">Popped & Shelved</span>
+                        {% else %}
+                            <span class="badge-pill-soft badge-pending">In Stack</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No historical stack entries logged.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
