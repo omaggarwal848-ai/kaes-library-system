@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Issue & Return Management - Kaes Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Issue & Return Management</h2>
+        <p class="text-muted small mb-0">Circulation desk: issue available books, compute late fines, and push returns to LIFO Return Stack.</p>
+    </div>
+    <div>
+        <button class="btn btn-primary-gradient rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#issueBookModal">
+            <i class="fas fa-plus-circle me-1"></i> Issue New Book
+        </button>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills mb-4 glass-panel p-2 d-inline-flex">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill {% if active_tab == 'active' %}active{% endif %}" href="?tab=active">
+            <i class="fas fa-hand-holding me-1"></i> Active Loans ({{ active_issues.paginator.count }})
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill {% if active_tab == 'history' %}active{% endif %}" href="?tab=history">
+            <i class="fas fa-clock-rotate-left me-1"></i> Completed Returns History ({{ returns_history.paginator.count }})
+        </a>
+    </li>
+</ul>
+
+{% if active_tab == 'active' %}
+<!-- Active Loans Table -->
+<div class="glass-panel overflow-hidden mb-4">
+    <div class="p-3 border-bottom border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Currently Issued Books</h5>
+        <form method="GET" class="d-flex gap-2">
+            <input type="hidden" name="tab" value="active">
+            <input type="text" name="q" value="{{ q_search }}" class="form-control form-control-sm rounded-pill" placeholder="Search loan ID, book, student..." style="width: 250px;">
+            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table custom-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Issue ID</th>
+                    <th>Book Details</th>
+                    <th>Student Borrower</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Fine Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in active_issues %}
+                <tr>
+                    <td><span class="font-monospace fw-bold text-primary">{{ issue.issue_id }}</span></td>
+                    <td>
+                        <div class="fw-bold">{{ issue.book.title }}</div>
+                        <div class="small text-muted">ISBN: {{ issue.book.isbn }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ issue.student.full_name }}</div>
+                        <div class="small text-muted">{{ issue.student.student_id }} &bull; {{ issue.student.department }}</div>
+                    </td>
+                    <td>{{ issue.issue_date }}</td>
+                    <td>
+                        <div>{{ issue.due_date }}</div>
+                        {% if issue.is_overdue %}
+                            <span class="badge bg-danger text-white">Overdue by {{ issue.days_remaining_or_overdue|stringformat:"+d"|slice:"1:" }} days</span>
+                        {% else %}
+                            <span class="small text-success">{{ issue.days_remaining_or_overdue }} days remaining</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if issue.is_overdue %}
+                            <span class="fw-bold text-danger">${{ issue.calculate_fine }} Late Fine</span>
+                        {% else %}
+                            <span class="text-muted small">No Fine</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#returnModal-{{ issue.id }}">
+                            <i class="fas fa-arrow-turn-down me-1"></i> Return Book
+                        </button>
+
+                        <!-- Return Modal -->
+                        <div class="modal fade" id="returnModal-{{ issue.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered text-start">
+                                <div class="modal-content glass-panel border-0">
+                                    <div class="modal-header border-bottom border-light-subtle">
+                                        <h5 class="modal-title fw-bold">Process Return: {{ issue.book.title }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="POST" action="{% url 'return_book_action' issue.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body p-4">
+                                            <div class="alert alert-info py-2 small mb-3">
+                                                <i class="fas fa-info-circle me-1"></i> Processing this return will increment available copies (+1) and automatically <strong>PUSH this book onto the manual LIFO Return Stack</strong>.
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Borrower:</label>
+                                                <div class="fw-bold">{{ issue.student.full_name }} ({{ issue.student.student_id }})</div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Book Condition</label>
+                                                <select name="book_condition" class="form-select">
+                                                    <option value="Good">Good / Normal</option>
+                                                    <option value="Fair">Fair / Minor Wear</option>
+                                                    <option value="Damaged">Damaged / Binding Wear</option>
+                                                    <option value="Lost">Lost</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Fine Amount to Settle ($)</label>
+                                                <input type="number" step="0.50" name="fine_collected" value="{{ issue.calculate_fine }}" class="form-control">
+                                                <div class="form-text small">Calculated late fine: ${{ issue.calculate_fine }} ($2.00/day overdue)</div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Inspection Remarks</label>
+                                                <textarea name="remarks" class="form-control" rows="2" placeholder="Inspection notes for shelving desk"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                                <i class="fas fa-layer-group me-1"></i> Confirm & Push to Stack
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">No active loans found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<!-- Return History Table -->
+<div class="glass-panel overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table custom-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Issue ID</th>
+                    <th>Book Title</th>
+                    <th>Student Name</th>
+                    <th>Return Date & Time</th>
+                    <th>Condition</th>
+                    <th>Fine Collected</th>
+                    <th>Received By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ret in returns_history %}
+                <tr>
+                    <td><span class="font-monospace fw-bold">{{ ret.issue.issue_id }}</span></td>
+                    <td class="fw-bold">{{ ret.issue.book.title }}</td>
+                    <td>{{ ret.issue.student.full_name }}</td>
+                    <td>{{ ret.return_date|date:"Y-m-d H:i" }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ ret.book_condition }}</span></td>
+                    <td>${{ ret.fine_collected }}</td>
+                    <td>{{ ret.returned_to.username|default:"Admin" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">No completed returns logged yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Issue Book Modal -->
+<div class="modal fade" id="issueBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-panel border-0">
+            <div class="modal-header border-bottom border-light-subtle">
+                <h5 class="modal-title fw-bold"><i class="fas fa-book-reader me-2 text-primary"></i>Issue Book to Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'issue_book_action' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select Student Borrower *</label>
+                        {{ issue_form.student }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select Available Book *</label>
+                        {{ issue_form.book }}
+                        <div class="form-text small">Only books with available copies (>0) are listed.</div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Issue Date</label>
+                            {{ issue_form.issue_date }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Due Date</label>
+                            {{ issue_form.due_date }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Issue Notes</label>
+                        {{ issue_form.notes }}
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-gradient rounded-pill px-4">
+                        <i class="fas fa-check me-1"></i> Issue Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
