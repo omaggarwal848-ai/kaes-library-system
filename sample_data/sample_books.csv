@@ -1,0 +1,11 @@
+isbn,title,author,category,publisher,publication_year,edition,total_copies,shelf_location,description
+978-0132350884,Clean Code: A Handbook of Agile Software Craftsmanship,Robert C. Martin,Computer Science,Prentice Hall,2008,1st Edition,5,Rack CS-01,"Even bad code can function. But if code is not clean, it can bring a development organization to its knees."
+978-0262033848,Introduction to Algorithms,Thomas H. Cormen,Algorithms & Data Structures,MIT Press,2009,3rd Edition,4,Rack CS-02,"A comprehensive textbook on modern computer algorithms."
+978-1449355730,Learning Python,Mark Lutz,Programming Languages,O'Reilly Media,2013,5th Edition,6,Rack PL-04,"Get a comprehensive, in-depth introduction to the core Python language."
+978-0134685991,Effective Java,Joshua Bloch,Programming Languages,Addison-Wesley,2017,3rd Edition,4,Rack PL-05,"The definitive guide to best practices in the Java programming language."
+978-1491957660,Designing Data-Intensive Applications,Martin Kleppmann,Data Engineering,O'Reilly Media,2017,1st Edition,5,Rack DB-01,"The big ideas behind reliable, scalable, and maintainable systems."
+978-0596517748,JavaScript: The Good Parts,Douglas Crockford,Web Development,O'Reilly Media,2008,1st Edition,3,Rack WD-03,"A deep dive into the elegant and powerful parts of JavaScript."
+978-0201616224,The Pragmatic Programmer,Andrew Hunt,Software Engineering,Addison-Wesley,1999,20th Anniversary,5,Rack SE-02,"From journeyman to master, essential guidelines for software craft."
+978-0131103627,The C Programming Language,Brian W. Kernighan,Programming Languages,Prentice Hall,1988,2nd Edition,4,Rack PL-01,"The definitive guide written by the creators of C."
+978-1119547259,Artificial Intelligence: A Modern Approach,Stuart Russell,Artificial Intelligence,Pearson,2020,4th Edition,5,Rack AI-01,"The most comprehensive, up-to-date introduction to the theory and practice of AI."
+978-0321573513,Algorithms,Robert Sedgewick,Algorithms & Data Structures,Addison-Wesley,2011,4th Edition,4,Rack CS-03,"Essential information about algorithms and data structures."
