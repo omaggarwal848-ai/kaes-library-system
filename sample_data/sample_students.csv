@@ -1,0 +1,9 @@
+student_id,first_name,last_name,email,phone,department,enrollment_year,address,status
+STU2024001,Aarav,Sharma,aarav.sharma@campus.edu,+1-555-0101,Computer Science & Engineering,2024,Building A Room 102,active
+STU2024002,Sophia,Chen,sophia.chen@campus.edu,+1-555-0102,Data Science & AI,2024,Hostel Block 3 Apt 14,active
+STU2024003,Liam,Johnson,liam.johnson@campus.edu,+1-555-0103,Information Technology,2023,North Campus Residence 2B,active
+STU2024004,Priya,Patel,priya.patel@campus.edu,+1-555-0104,Electronics & Communication,2024,Hostel Block 1 Apt 22,active
+STU2024005,Alexander,Wright,alex.wright@campus.edu,+1-555-0105,Mechanical Engineering,2023,East Wing Residence 405,active
+STU2024006,Emma,Davis,emma.davis@campus.edu,+1-555-0106,Computer Science & Engineering,2024,South Hall Room 311,active
+STU2024007,Rohan,Gupta,rohan.gupta@campus.edu,+1-555-0107,Data Science & AI,2023,Hostel Block 4 Apt 09,active
+STU2024008,Isabella,Martinez,isabella.m@campus.edu,+1-555-0108,Business Administration,2024,Campus Heights Unit 12,active
